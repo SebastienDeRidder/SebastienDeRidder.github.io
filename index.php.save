@@ -1,0 +1,77 @@
+<!-- index.php -->
+<?php 
+require 'layout/HABE_style.php';
+require 'layout/HABE_header.php';
+require 'HABE_connection_comments.php';
+?>
+<meta charset="UTF-8">
+<title> HABE_home </title>
+</head>
+<body>
+<h1>Dit is de startpagina.</h1>
+<p>Het feit dat je dit kan lezen betekent dat je succesvol bent aangemeld.</p> <br>   
+<?php
+$sql = "SELECT * FROM comments";
+$result = $conn->query($sql);
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+    echo '<div class="scroll" style="margin: auto">' . $row['gebruiker'] . ' posted "' . $row['comment'] . '" at ' . $row['tijd'] . "." . "<br>" . '</div>';
+    
+}
+}
+$nameErr = $websiteErr = "";
+$comment = $website = "";
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (empty($_POST["website"])) {
+        $website = "";
+    } else {
+        $website = test_input($_POST["website"]);
+        // check URL
+        if (!preg_match("/\b(?:(?:https?|ftp):\/\/|www\.)[-a-z0-9+&@#\/%?=~_|!:,.;]*[-a-z0-9+&@#\/%=~_|]/i",$website)) {
+        $websiteErr = "Invalid URL";
+        }
+    }
+    if (empty($_POST["comment"])) {
+        $comment = "";
+    } else {
+        $comment = test_input($_POST["comment"]);
+        $email = $_SESSION["login"];
+        $servername = "localhost";
+        $username = "root";
+        $password = "";
+        $dbname = "habe";
+        $conn = new mysqli($servername, $username, $password, $dbname);
+        $sql = "SELECT `Naam` FROM gebruikers WHERE Email='$email'";
+        $result = $conn->query($sql);
+        if ($result->num_rows > 0) {
+            $row = mysqli_fetch_array($result);
+        }
+        $naam = $row["Naam"];
+        $time = date("Y-m-d h:i:sa");
+        $sql = "INSERT INTO comments (id, gebruiker, comment, tijd) VALUES (NULL, '$naam', '$comment', '$time')";
+        if ($conn->query($sql) == TRUE) {
+            #echo 'comment posted';
+            $comment = "";
+        
+}
+    }
+}
+
+function test_input($data) {
+$data = trim($data);
+$data = stripslashes($data);
+$data = htmlspecialchars($data);
+return $data;
+}
+?>       
+<form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">  
+<textarea name="comment" rows="3" cols="40" placeholder="say something nice" ><?php echo $comment;?></textarea>
+<br>
+<input type="submit" name="submit" value="Submit">  
+<input type="submit" value="Refresh Page">
+</form>
+<?php
+require "layout/HABE_footer.php";
+?>
+</body>
+</html> 
